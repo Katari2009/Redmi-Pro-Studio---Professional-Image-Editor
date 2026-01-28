@@ -1,0 +1,7 @@
+{
+  "name": "Redmi Pro Studio - Professional Image Editor",
+  "description": "A high-end image retouching application inspired by professional photography workflows, featuring advanced pixel-level manipulation, presets, and AI-assisted editing.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
