@@ -90,19 +90,23 @@ const App: React.FC = () => {
     showToast('IA analizando escena...');
     
     try {
+      // Usar la inicialización recomendada por las guías
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const base64Image = canvasRef.current.toDataURL('image/jpeg', 0.5).split(',')[1];
+      const base64Data = canvasRef.current.toDataURL('image/jpeg', 0.5).split(',')[1];
       
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: [
-          {
-            parts: [
-              { text: "Analiza esta imagen y devuelve valores de revelado profesional. Devuelve exclusivamente un objeto JSON con las claves: exposure, contrast, shadows, highlights, whites, temp, tint, saturation, vibrance, sharpness, clarity, vignette. Rango -100 a 100." },
-              { inlineData: { mimeType: 'image/jpeg', data: base64Image } }
-            ]
-          }
-        ],
+        contents: {
+          parts: [
+            { text: "Eres un experto colorista cinematográfico. Analiza esta imagen y genera los parámetros ideales de revelado digital. Devuelve exclusivamente un objeto JSON válido con las siguientes claves: exposure, contrast, shadows, highlights, whites, temp, tint, saturation, vibrance, sharpness, clarity, vignette. Los valores deben ser números enteros entre -100 y 100 (nitidez de 0 a 100). No añadas explicaciones, solo el JSON." },
+            { 
+              inlineData: { 
+                mimeType: 'image/jpeg', 
+                data: base64Data 
+              } 
+            }
+          ]
+        },
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -120,17 +124,22 @@ const App: React.FC = () => {
               sharpness: { type: Type.INTEGER },
               clarity: { type: Type.INTEGER },
               vignette: { type: Type.INTEGER }
-            }
+            },
+            required: ["exposure", "contrast", "shadows", "highlights", "whites", "temp", "tint", "saturation", "vibrance", "sharpness", "clarity", "vignette"]
           }
         }
       });
 
-      const aiSettings = JSON.parse(response.text);
-      setSettings(aiSettings);
-      showToast('Optimización IA finalizada');
+      if (response.text) {
+        const aiSettings = JSON.parse(response.text.trim());
+        setSettings(aiSettings);
+        showToast('Optimización IA finalizada');
+      } else {
+        throw new Error('Respuesta de IA vacía');
+      }
     } catch (error) {
-      console.error(error);
-      showToast('Error en el motor IA');
+      console.error('Error detallado en Masterpiece AI:', error);
+      showToast('Error en el motor IA. Verifica la conexión.');
     } finally {
       setIsAIAnalyzing(false);
     }
@@ -209,10 +218,10 @@ const App: React.FC = () => {
             onClick={analyzeWithAI}
             className={`w-full mb-8 py-4 rounded-xl flex items-center justify-center gap-3 font-black text-[10px] uppercase tracking-[0.2em] transition-all
               ${image ? 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer active:scale-[0.98] shadow-lg shadow-indigo-900/30' : 'bg-gray-800 text-gray-600 cursor-not-allowed'}
-              ${isAIAnalyzing ? 'animate-pulse' : ''}`}
+              ${isAIAnalyzing ? 'animate-pulse scale-[0.98]' : ''}`}
           >
-            <span>✨</span>
-            {isAIAnalyzing ? 'Procesando IA...' : 'Masterpiece AI'}
+            <span>{isAIAnalyzing ? '⏳' : '✨'}</span>
+            {isAIAnalyzing ? 'Procesando Escena...' : 'Masterpiece AI'}
           </button>
 
           <section className="mb-10">
@@ -274,7 +283,7 @@ const App: React.FC = () => {
 
           <footer className="mt-6 pb-10 border-t border-[#333] pt-8 text-center">
              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">Creado por Christian Núñez V. 2026</p>
-             <p className="text-[8px] text-gray-700 mt-2 uppercase tracking-[0.3em]">Professional Suite for Web</p>
+             <p className="text-[8px] text-gray-700 mt-2 uppercase tracking-[0.3em]">Professional Suite for Web • v2.0.1</p>
           </footer>
         </aside>
       </main>
